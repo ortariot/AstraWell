@@ -1,21 +1,21 @@
 version: "3.9"
 services:
-  # etl:
-  #   volumes:
-  #     - .:/etl
-  #   build:
-  #     context: .
-  #     dockerfile: ./Dockerfile.etl
-  #   env_file:
-  #     - .env
-  # neiro-getway:
-  #   volumes:
-  #     - .:/neiro_getway
-  #   build:
-  #     context: .
-  #     dockerfile: ./Dockerfile.neiro_getway
-  #   env_file:
-  #     - .env
+  etl:
+    volumes:
+      - .:/etl
+    build:
+      context: .
+      dockerfile: ./Dockerfile.etl
+    env_file:
+      - .env
+  neiro-getway:
+    volumes:
+      - .:/neiro_getway
+    build:
+      context: .
+      dockerfile: ./Dockerfile.neiro_getway
+    env_file:
+      - .env
   tg-bot:
     volumes:
       - ./tg:/app
@@ -24,6 +24,6 @@ services:
     build:
       context: ./tg/
       dockerfile: Dockerfile
-    # depends_on:
-    #   - neiro-getway
-    #   - etl
+    depends_on:
+      - neiro-getway
+      - etl
