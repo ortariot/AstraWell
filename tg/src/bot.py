@@ -221,7 +221,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
     elif user.mts_role == 'manager':
         await message.answer("Привет, господин менеджер.")
     elif user.mts_role == 'user':
-        keyboard = make_row_keyboard("новая идея", "помотреть идеи")
+        keyboard = make_row_keyboard("новая идея", "посмотреть идеи")
         await message.answer("Привет, пользователь!\nПодумаем над новой идеей? Или вспомним  какие уже есть?", reply_markup=keyboard)
     else:
         options_2 = LinkPreviewOptions(
