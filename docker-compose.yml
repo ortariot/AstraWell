@@ -8,6 +8,14 @@ services:
       dockerfile: ./Dockerfile.etl
     env_file:
       - .env
+  calcvars:
+    volumes:
+      - .:/calcvars
+    build:
+      context: .
+      dockerfile: ./Dockerfile.calcvars
+    env_file:
+      - .env
   neiro-getway:
     volumes:
       - .:/neiro_getway
