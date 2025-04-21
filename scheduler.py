@@ -14,7 +14,7 @@ class PoolRunner:
 
     mws_tables_token = "Bearer uskuIZAHcsZFozBPKleOVy6"
     state = set()
-    flights = FlightEtl() 
+    flights = FlightEtl()
     hotels = HotelEtl()
     weather = WeathersEtl()
 
@@ -82,12 +82,7 @@ class PoolRunner:
 
                 body = await response.json()
 
-                # pprint(body)
-
                 res = self.create_state(body["data"]["records"])
-
-                print(res)
-                # return
 
                 for item in res:
                     if item not in self.state:
@@ -99,8 +94,12 @@ class PoolRunner:
                         params[4] = None if params[4] == "None" else params[4]
 
                         await self.flights.flight_etl(*params)
-                        await self.hotels.hotels_etl(params[1], params[2], params[3], params[4])
-                        await self.weather.weather_etl(params[1], params[2], params[3], params[4])
+                        await self.hotels.hotels_etl(
+                            params[1], params[2], params[3], params[4]
+                        )
+                        await self.weather.weather_etl(
+                            params[1], params[2], params[3], params[4]
+                        )
                         self.state.add(item)
 
                 time.sleep(10)

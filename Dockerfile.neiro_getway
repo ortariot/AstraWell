@@ -1,0 +1,16 @@
+FROM python:3.12
+
+ENV TZ=UTC
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+ 
+RUN mkdir /neiro_getway
+WORKDIR /neiro_getway
+
+COPY ./requirements.txt /neiro_getway/requirements.txt
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+RUN pip install --no-cache-dir --upgrade -r /neiro_getway/requirements.txt
+
+CMD ["python", "neiro_getwat.py"]
