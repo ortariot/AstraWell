@@ -1,50 +1,45 @@
 import time
 
-from config import Config as cf
+from core.settings import Config as cf
 from etl import update_vars
 from mwstables import Tables
+from core.settings import settings
+
 
 class Sceduler:
-    """
-    """
-    
+    """ """
+
     def __init__(self, token: str) -> None:
-        """
-        """
-        
+        """ """
+
         self.token = token
         self.tb = Tables(token)
         self.curr_pos = 0
-    
+
     def run(self):
-        """
-        """
-        
-        print('Start app')
-        
+        """ """
+
+        print("Start app")
+
         while True:
             try:
                 info = self.tb.get_table_info(cf.IDEAS_TABLE_ID)
-                total = info.get('total')
-                
+                total = info.get("total")
+
                 if total > self.curr_pos:
-                    print('Table is update')
+                    print("Table is update")
                     update_vars(self.token)
                     self.curr_pos = total
-                print('tick')
+                print("tick")
                 time.sleep(10)
             except KeyboardInterrupt:
                 break
-            
-        print('Stop app')
+
+        print("Stop app")
+
 
 if __name__ == "__main__":
-    
-    
-    
-    TOKEN = 'uskcpZ2JD2FZUXTVQ3Hd8WA'
-    
-    sc = Sceduler(TOKEN)
-    
+
+    sc = Sceduler(settings.mws_tables_token)
+
     sc.run()
-    
