@@ -3,15 +3,15 @@ FROM python:3.12
 ENV TZ=UTC
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
  
-RUN mkdir /etl
-WORKDIR /etl
+RUN mkdir /calcvars
+WORKDIR /calcvars
 
-COPY ./requirements.txt /etl/requirements.txt
+COPY ./requirements.txt /calcvars/requirements.txt
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-RUN pip install --no-cache-dir --upgrade -r /etl/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /calcvars/requirements.txt
 
 
-CMD ["python", "scheduler.py"]
+CMD ["python", "start.py"]

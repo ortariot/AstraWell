@@ -10,7 +10,7 @@ services:
       - .env
   calcvars:
     volumes:
-      - .:/calcvars
+      - ./calcvars:/calcvars
     build:
       context: .
       dockerfile: ./Dockerfile.calcvars
