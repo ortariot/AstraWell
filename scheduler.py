@@ -8,11 +8,12 @@ import aiohttp
 from etl.flight import FlightEtl
 from etl.hotel import HotelEtl
 from etl.weather import WeathersEtl
+from core.settings import settings
 
 
 class PoolRunner:
 
-    mws_tables_token = "Bearer uskuIZAHcsZFozBPKleOVy6"
+    mws_tables_token = settings.mws_tables_token
     state = set()
     flights = FlightEtl()
     hotels = HotelEtl()

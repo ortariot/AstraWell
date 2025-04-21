@@ -51,6 +51,7 @@ class Idea:
                         description
                     )
 
+                print(item)
                 user_id = item["fields"]["user"][0]
                 user_city_id = await self.get_user_city(user_id)
                 home_iata_code = await self.get_iata_code(user_city_id)
