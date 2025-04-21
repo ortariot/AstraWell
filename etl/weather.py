@@ -59,8 +59,6 @@ class WeathersEtl:
                 data=None,
             )
 
-            body = await response.json()
-
     async def get_geodata(
         self, locataion: str, checkIn: str, checkOut: str | None = None
     ) -> tuple:

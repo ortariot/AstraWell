@@ -114,5 +114,4 @@ class HotelEtl:
                 data=None,
             )
 
-            body = await response.json()
 
