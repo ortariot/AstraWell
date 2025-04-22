@@ -2,4 +2,4 @@ aiohttp==3.11.16
 pydantic-settings==2.9.1
 openai
 requests
-redis=5.2.1
+redis==5.2.1
