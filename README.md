@@ -25,6 +25,7 @@
 - [DeepSeek](https://www.deepseek.com/)
 - [pydantic](https://pypi.org/project/pydantic/)
 - [fastapi](https://fastapi.tiangolo.com/ru/)
+- [aiogram](https://pypi.org/project/aiogram/)
 
 to start
 ```
