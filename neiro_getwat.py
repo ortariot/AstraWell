@@ -199,7 +199,7 @@ class Idea:
         json_data = {"fieldKey": "name"}
 
         if user_id:
-            json["recordIds"] = user_id
+            json_data["recordIds"] = user_id
 
         req_json = {"Authorization": self.mws_tables_token}
 
