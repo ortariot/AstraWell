@@ -182,7 +182,10 @@ class Idea:
                 try:
                     body = await response.json()
                     return body["data"]["records"]
-                except json.decoder.JSONDecodeError as e:
+                except (
+                    aiohttp.client_exceptions.ContentTypeError,
+                    json.decoder.JSONDecodeError,
+                ) as e:
                     print(f"error - {e}")
                     return []
             else:
@@ -218,7 +221,10 @@ class Idea:
 
             try:
                 body = await response.json()
-            except json.decoder.JSONDecodeError as e:
+            except (
+                json.decoder.JSONDecodeError,
+                aiohttp.client_exceptions.ContentTypeError,
+            ) as e:
                 body = None
                 print(f"error - {e}")
 
@@ -249,7 +255,11 @@ class Idea:
                 )
 
                 body = await response.json()
-            except (TimeoutError, json.decoder.JSONDecodeError):
+            except (
+                TimeoutError,
+                json.decoder.JSONDecodeError,
+                aiohttp.client_exceptions.ContentTypeError,
+            ):
                 response = None
                 print(f"timeout with api: {settings.mws_api_path}")
 
