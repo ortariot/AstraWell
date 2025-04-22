@@ -55,11 +55,11 @@ async def _get_table(url: str, fields: list[str] | None = None):
         ) as response:
             return await response.json()
 
-get_users = partial(_get_table, 'https://true.tabs.sale/fusion/v1/datasheets/dstGLhT5cQ14QWYrvP/records')
-get_managers = partial(_get_table, 'https://true.tabs.sale/fusion/v1/datasheets/dstQrDCjZUP3CURDDD/records')
-get_directors = partial(_get_table, 'https://true.tabs.sale/fusion/v1/datasheets/dst83xQGFcF3Rq1epj/records')
-get_user_autocomplete = partial(_get_table, 'https://true.tabs.sale/fusion/v1/datasheets/dstfmuNcr1RQQypr9q/records')
-get_poling_messages = partial(_get_table, 'https://true.tabs.sale/fusion/v1/datasheets/dstkgFW7oLupkX4qAP/records')
+get_users = partial(_get_table, f'{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstGLhT5cQ14QWYrvP/records')
+get_managers = partial(_get_table, f'{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstQrDCjZUP3CURDDD/records')
+get_directors = partial(_get_table, f'{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dst83xQGFcF3Rq1epj/records')
+get_user_autocomplete = partial(_get_table, f'{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstfmuNcr1RQQypr9q/records')
+get_poling_messages = partial(_get_table, f'{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstkgFW7oLupkX4qAP/records')
 
 async def do_user_autocomplete():
     data = await get_user_autocomplete()
@@ -87,7 +87,7 @@ async def do_user_autocomplete():
                             ]
                         }
                         async with ses.patch(
-                            f"https://true.tabs.sale/fusion/v1/datasheets/{fields['target_shield']}/records",
+                            f"{CFG.MTS.BASE_URL}/fusion/v1/datasheets/{fields['target_shield']}/records",
                             headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
                             raise_for_status=True,
                             json=data
@@ -98,7 +98,7 @@ async def do_user_autocomplete():
                         logger.warning('ПЛОХАЯ ЗАПИСЬ! %s', record)
                     # ПРИБОРКА
                     async with ses.delete(
-                        "https://true.tabs.sale/fusion/v1/datasheets/dstfmuNcr1RQQypr9q/records",
+                        f"{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstfmuNcr1RQQypr9q/records",
                         headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
                         raise_for_status=True,
                         params={'recordIds': record['recordId']}
@@ -139,7 +139,7 @@ async def send_messages(messages: list[dict], bot: Bot):
                 await bot.send_message(STATE.from_nick[record['fields']['username']].chat_id, record['fields']['text'], **kwargs)
             async with STATE.http_session as ses:
                 async with ses.delete(
-                        "https://true.tabs.sale/fusion/v1/datasheets/dstkgFW7oLupkX4qAP/records",
+                        f"{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstkgFW7oLupkX4qAP/records",
                         headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
                         params={'recordIds': record['recordId']},
                         raise_for_status=True
@@ -226,7 +226,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
         await message.answer("Привет, пользователь!\nПодумаем над новой идеей? Или вспомним  какие уже есть?", reply_markup=keyboard)
     else:
         options_2 = LinkPreviewOptions(
-            url="https://true.tabs.sale/share/shrj0nKc2ujcmCU8zTQz0/fomyhCAk2XGlPDZn6B",
+            url="{CFG.MTS.BASE_URL}/share/shrj0nKc2ujcmCU8zTQz0/fomyhCAk2XGlPDZn6B",
             prefer_small_media=True
         )
         await message.answer("Привет!.. Мы поможем тебе хорошо отдохнуть и не пролететь. Давай подключаться к проекту?", link_preview_options=options_2)
@@ -310,13 +310,13 @@ async def new_idea_end_date(message: Message, state: FSMContext):
         )
     else:
         keyboard = make_row_keyboard("новая идея", "посмотреть идеи")
-        result = 'Отлично, [записал](https://true.tabs.sale/workbench/mirwP09NHQExSZeMr6), скоро будут предложения.'
+        result = f'Отлично, [записал]({CFG.MTS.BASE_URL}/workbench/mirwP09NHQExSZeMr6), скоро будут предложения.'
         data = await state.get_data()
         await state.clear()
         try:
             async with STATE.http_session as ses:
                 async with ses.post(
-                    "https://true.tabs.sale/fusion/v1/datasheets/dstBuL8jPgynbJrEpD/records",
+                    f"{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstBuL8jPgynbJrEpD/records",
                     headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
                     raise_for_status=True,
                     json={
