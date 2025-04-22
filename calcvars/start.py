@@ -1,8 +1,6 @@
 import time
 
-from core.settings import Config as cf
-from etl import update_vars
-from mwstables import Tables
+from etl import Extractor
 from core.settings import settings
 
 
@@ -13,8 +11,7 @@ class Sceduler:
         """ """
 
         self.token = token
-        self.tb = Tables(token)
-        self.curr_pos = 0
+        self.ex = Extractor(token)
 
     def run(self):
         """ """
@@ -23,18 +20,24 @@ class Sceduler:
 
         while True:
             try:
-                info = self.tb.get_table_info(cf.IDEAS_TABLE_ID)
-                total = info.get("total")
+                ideas_set = self.ex.get_ideas_set()
+                var_ideas_set = self.ex.check_variants()
+                delta: set[str] =  ideas_set.difference(var_ideas_set)
 
-                if total > self.curr_pos:
-                    print("Table is update")
+                if delta:
+                    print("New ideas have been discovered")
+                    ideas_dict = self.ex.get_ideas_dict(list(delta))
+                    for idea_name in ideas_dict:
+                        print(f"New idea object: {idea_name}")
                     time.sleep(10)
-                    update_vars(self.token)
-                    self.curr_pos = total
+                    self.ex.update_vars(ideas_dict)
                 print(f"tick - {time.time()}")
-                time.sleep(10)
+                time.sleep(5)
+                
             except KeyboardInterrupt:
                 break
+            except IndexError as e:
+                print(e)
 
         print("Stop app")
 
