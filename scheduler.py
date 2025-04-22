@@ -83,9 +83,9 @@ class PoolRunner:
             "Content-Type": "application/json",
         }
 
-        # json_data = {
-        #     "fieldKey": "name",
-        # }
+        json_data = {
+            "fieldKey": "name",
+        }
 
         params = {
             "pageSize": 1000,
@@ -94,7 +94,7 @@ class PoolRunner:
                 "destination",
                 "departure_at",
                 "return_at",
-            ],
+            ]
         }
         async with aiohttp.ClientSession() as session:
             while True:
@@ -103,12 +103,12 @@ class PoolRunner:
                     response = await session.request(
                         "GET",
                         req_url,
-                        # json=json_data,
-                        headers=headers,
+                        json=json_data,
                         params=params,
+                        headers=headers,
                         timeout=5,
                     )
-                except (TimeoutError, ValueError):
+                except TimeoutError:
                     response = None
                     print(f"timeout with api: {settings.mws_api_path}")
                 if response:
