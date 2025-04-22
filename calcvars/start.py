@@ -1,8 +1,9 @@
+from requests.exceptions import JSONDecodeError
 import time
+
 
 from etl import Extractor
 from core.settings import settings
-
 
 class Sceduler:
     """ """
@@ -38,6 +39,9 @@ class Sceduler:
                 break
             except IndexError as e:
                 print(e)
+            except JSONDecodeError as e:
+                print(f"API error {e}")
+            
 
         print("Stop app")
 
