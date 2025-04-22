@@ -127,7 +127,7 @@ class Idea:
             "Content-Type": "application/json",
         }
 
-        json = {
+        json_data = {
             "records": [data],
             "fieldKey": "name",
         }
@@ -136,7 +136,7 @@ class Idea:
 
             try:
                 response = await session.request(
-                    "POST", req_url, json=json, headers=headers, timeout=5
+                    "POST", req_url, json=json_data, headers=headers, timeout=5
                 )
             except TimeoutError:
                 response = None
@@ -169,8 +169,6 @@ class Idea:
                 response = await session.request(
                     "GET",
                     req_url,
-                    json=None,
-                    params=None,
                     headers=req_json,
                     timeout=5,
                 )
@@ -198,7 +196,7 @@ class Idea:
             + f"/fusion/v1/datasheets/{settings.mws_table_users}/records"
         )
 
-        json = {"fieldKey": "name"}
+        json_data = {"fieldKey": "name"}
 
         if user_id:
             json["recordIds"] = user_id
@@ -210,7 +208,7 @@ class Idea:
                 response = await session.request(
                     "GET",
                     req_url,
-                    json=json,
+                    json=json_data,
                     params=None,
                     headers=req_json,
                     timeout=5,
@@ -248,8 +246,6 @@ class Idea:
                 response = await session.request(
                     "GET",
                     req_url,
-                    json=None,
-                    params=None,
                     headers=req_json,
                     timeout=5,
                 )

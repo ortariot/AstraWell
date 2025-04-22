@@ -98,7 +98,7 @@ class FlightEtl:
 
             try:
                 response = await session.request(
-                    "GET", req_url, json=None, params=req_params, timeout=2
+                    "GET", req_url, params=req_params, timeout=2
                 )
             except TimeoutError:
                 print(
@@ -180,7 +180,7 @@ class FlightEtl:
 
             try:
                 response = await session.request(
-                    "GET", req_url, json=None, params=req_params, timeout=5
+                    "GET", req_url, params=req_params, timeout=5
                 )
                 body = await response.json()
             except (TimeoutError, json.decoder.JSONDecodeError) as e:
@@ -207,7 +207,7 @@ class FlightEtl:
 
             async with aiohttp.ClientSession() as session:
                 response = await session.request(
-                    "GET", req_url, json=None, params=req_params
+                    "GET", req_url, params=req_params
                 )
 
                 try:

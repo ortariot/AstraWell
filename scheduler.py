@@ -2,6 +2,7 @@ import asyncio
 import time
 from datetime import datetime
 from pprint import pprint
+import json
 
 import aiohttp
 
@@ -80,7 +81,7 @@ class PoolRunner:
             "Content-Type": "application/json",
         }
 
-        json = {
+        json_data = {
                 "fieldKey": "name"
             }
         async with aiohttp.ClientSession() as session:
@@ -88,7 +89,7 @@ class PoolRunner:
 
                 try:
                     response = await session.request(
-                        "GET", req_url, json=json, headers=headers
+                        "GET", req_url, json=json_data, headers=headers
                     )
                 except TimeoutError:
                     response = None

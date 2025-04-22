@@ -61,7 +61,7 @@ class HotelEtl:
             }
             try:
                 response = await session.request(
-                    "GET", req_url, json=None, params=req_params, timeout=5
+                    "GET", req_url, params=req_params, timeout=5
                 )
             except TimeoutError:
                 print(
