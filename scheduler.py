@@ -89,12 +89,6 @@ class PoolRunner:
 
         params = {
             "pageSize": 1000,
-            "fields": [
-                "origin",
-                "destination",
-                "departure_at",
-                "return_at",
-            ],
         }
         async with aiohttp.ClientSession() as session:
             while True:
