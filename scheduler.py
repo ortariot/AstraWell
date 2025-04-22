@@ -108,7 +108,7 @@ class PoolRunner:
                         params=params,
                         timeout=5,
                     )
-                except TimeoutError:
+                except (TimeoutError, ValueError):
                     response = None
                     print(f"timeout with api: {settings.mws_api_path}")
                 if response:
