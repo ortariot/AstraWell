@@ -83,12 +83,18 @@ class PoolRunner:
             "Content-Type": "application/json",
         }
 
-        json_data = {
-            "fieldKey": "name",
-        }
+        # json_data = {
+        #     "fieldKey": "name",
+        # }
 
         params = {
             "pageSize": 1000,
+            "fields": [
+                "origin",
+                "destination",
+                "departure_at",
+                "return_at",
+            ],
         }
         async with aiohttp.ClientSession() as session:
             while True:
@@ -97,7 +103,7 @@ class PoolRunner:
                     response = await session.request(
                         "GET",
                         req_url,
-                        json=json_data,
+                        # json=json_data,
                         headers=headers,
                         params=params,
                         timeout=5,
