@@ -1,5 +1,6 @@
 import asyncio
 from pprint import pprint
+import json
 
 import aiohttp
 
@@ -14,10 +15,8 @@ class Idea:
 
     async def smart_idea(self):
         while True:
-            
-            ideas = await self.get_ideas()
-      
 
+            ideas = await self.get_ideas()
 
             for item in ideas:
                 try:
@@ -42,13 +41,11 @@ class Idea:
 
                 print(f"finded new idea {name}")
 
-
                 if description:
                     smart_preference = self.deepdeek.get_ai_preferences(
                         description
                     )
 
-            
                 user_id = item["fields"]["user"][0]
                 user_city_id = await self.get_user_city(user_id)
                 home_iata_code = await self.get_iata_code(user_city_id)
@@ -71,16 +68,15 @@ class Idea:
                     preference = await self.load_preferences(data)
                     if preference:
                         preferences.append(preference)
-                    
+
                     self.state.add(idea)
 
                 await self.update_idea(item, preferences)
 
     async def update_idea(self, idea: dict, preferences: list):
 
-        
         idea_id = idea["recordId"]
-        
+
         try:
             pref = idea["fields"]["preferences"]
         except KeyError:
@@ -89,10 +85,10 @@ class Idea:
         pref.extend(preferences)
 
         req_url = (
-                settings.mws_api_path
-                + f"/fusion/v1/datasheets/{settings.mws_table_ideas}/records"
-            )
-        
+            settings.mws_api_path
+            + f"/fusion/v1/datasheets/{settings.mws_table_ideas}/records"
+        )
+
         headers = {
             "Authorization": self.mws_tables_token,
             "Content-Type": "application/json",
@@ -111,28 +107,21 @@ class Idea:
         }
 
         async with aiohttp.ClientSession() as session:
-            
+
             try:
                 await session.request(
-                    "PATCH",
-                    req_url,
-                    json=json,
-                    headers=headers,
-                    timeout=5
+                    "PATCH", req_url, json=json, headers=headers, timeout=5
                 )
             except TimeoutError:
-                    print(
-                        f"timeout with api: {settings.mws_api_path}"
-                )
-            
+                print(f"timeout with api: {settings.mws_api_path}")
 
     async def load_preferences(self, data):
 
         req_url = (
-                settings.mws_api_path
-                + f"/fusion/v1/datasheets/{settings.mws_table_preferences}/records"
-            )
-        
+            settings.mws_api_path
+            + f"/fusion/v1/datasheets/{settings.mws_table_preferences}/records"
+        )
+
         headers = {
             "Authorization": self.mws_tables_token,
             "Content-Type": "application/json",
@@ -143,28 +132,24 @@ class Idea:
             "fieldKey": "name",
         }
 
-
         async with aiohttp.ClientSession() as session:
 
             try:
                 response = await session.request(
-                    "POST",
-                    req_url,
-                    json=json,
-                    headers=headers,
-                    timeout=5
+                    "POST", req_url, json=json, headers=headers, timeout=5
                 )
             except TimeoutError:
-                    response = None
-                    print(
-                        f"timeout with api: {settings.mws_api_path}"
-                )
+                response = None
+                print(f"timeout with api: {settings.mws_api_path}")
 
             if response:
                 try:
                     body = await response.json()
                     return body["data"]["records"][0]["recordId"]
-                except aiohttp.client_exceptions.ContentTypeError as e:
+                except (
+                    aiohttp.client_exceptions.ContentTypeError,
+                    json.decoder.JSONDecodeError,
+                ) as e:
                     print("error = {e} in func: load_preferences")
             else:
                 return None
@@ -172,59 +157,70 @@ class Idea:
     async def get_ideas(self):
 
         req_url = (
-                settings.mws_api_path
-                + f"/fusion/v1/datasheets/{settings.mws_table_ideas}/records"
-            )
+            settings.mws_api_path
+            + f"/fusion/v1/datasheets/{settings.mws_table_ideas}/records"
+        )
 
         req_json = {"Authorization": self.mws_tables_token}
 
         async with aiohttp.ClientSession() as session:
-            
+
             try:
                 response = await session.request(
-                    "GET", req_url, json=None, params=None, headers=req_json, timeout=5
+                    "GET",
+                    req_url,
+                    json=None,
+                    params=None,
+                    headers=req_json,
+                    timeout=5,
                 )
             except TimeoutError:
-                    response = None
-                    print(
-                        f"timeout with api: {settings.mws_api_path}"
-                )
+                response = None
+                print(f"timeout with api: {settings.mws_api_path}")
 
             if response:
-                body = await response.json()
-                return body["data"]["records"]
+                try:
+                    body = await response.json()
+                    return body["data"]["records"]
+                except json.decoder.JSONDecodeError as e:
+                    print(f"error - {e}")
+                    return []
             else:
                 return []
 
     async def get_user_city(self, user_id=None):
 
         req_url = (
-                settings.mws_api_path
-                + f"/fusion/v1/datasheets/{settings.mws_table_users}/records"
-            )
-        
-        json = {
-                "fieldKey": "name"
-            }
-        
+            settings.mws_api_path
+            + f"/fusion/v1/datasheets/{settings.mws_table_users}/records"
+        )
+
+        json = {"fieldKey": "name"}
+
         if user_id:
             json["recordIds"] = user_id
-        
 
         req_json = {"Authorization": self.mws_tables_token}
 
         async with aiohttp.ClientSession() as session:
             try:
                 response = await session.request(
-                    "GET", req_url, json=json, params=None, headers=req_json, timeout=5
+                    "GET",
+                    req_url,
+                    json=json,
+                    params=None,
+                    headers=req_json,
+                    timeout=5,
                 )
             except TimeoutError:
-                    response = None
-                    print(
-                        f"timeout with api: {settings.mws_api_path}"
-                )
+                response = None
+                print(f"timeout with api: {settings.mws_api_path}")
 
-            body = await response.json()
+            try:
+                body = await response.json()
+            except json.decoder.JSONDecodeError as e:
+                body = None
+                print(f"error - {e}")
 
             try:
                 user_city = body["data"]["records"][0]["fields"]["city"][0]
@@ -236,23 +232,26 @@ class Idea:
     async def get_iata_code(self, city_id=None):
 
         req_url = (
-                settings.mws_api_path
-                + f"/fusion/v1/datasheets/{settings.mws_table_airports}/records"
-            )
+            settings.mws_api_path
+            + f"/fusion/v1/datasheets/{settings.mws_table_airports}/records"
+        )
         req_json = {"Authorization": self.mws_tables_token}
 
         async with aiohttp.ClientSession() as session:
             try:
                 response = await session.request(
-                    "GET", req_url, json=None, params=None, headers=req_json, timeout=5
+                    "GET",
+                    req_url,
+                    json=None,
+                    params=None,
+                    headers=req_json,
+                    timeout=5,
                 )
 
                 body = await response.json()
-            except TimeoutError:
-                    response = None
-                    print(
-                        f"timeout with api: {settings.mws_api_path}"
-                )
+            except (TimeoutError, json.decoder.JSONDecodeError):
+                response = None
+                print(f"timeout with api: {settings.mws_api_path}")
 
             try:
                 iata_code = body["data"]["records"][0]["fields"]["iata_code"]
