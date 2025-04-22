@@ -83,7 +83,10 @@ class PoolRunner:
             "Content-Type": "application/json",
         }
 
-        json_data = {"fieldKey": "name"}
+        json_data = {
+            "fieldKey": "name",
+            "pageSize": 1000
+        }
         async with aiohttp.ClientSession() as session:
             while True:
 
@@ -128,7 +131,7 @@ class PoolRunner:
                                 params[1], params[2], params[3], params[4]
                             )
                             await self.cache.add_list("scheduler", item)
-                    
+
                     now = time.time()
 
                     time.sleep(10)
