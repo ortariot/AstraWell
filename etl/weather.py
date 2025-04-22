@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime
-
+import json
 
 import aiohttp
 
@@ -38,9 +38,9 @@ class WeathersEtl:
     async def load_weather(self, data: list) -> None:
 
         req_url = (
-                settings.mws_api_path
-                + f"/fusion/v1/datasheets/{settings.mws_table_weather}/records"
-            )
+            settings.mws_api_path
+            + f"/fusion/v1/datasheets/{settings.mws_table_weather}/records"
+        )
 
         headers = {
             "Authorization": self.mws_tables_token,
@@ -56,17 +56,10 @@ class WeathersEtl:
 
             try:
                 response = await session.request(
-                    "POST",
-                    req_url,
-                    json=json,
-                    headers=headers,
-                    timeout=5
+                    "POST", req_url, json=json, headers=headers, timeout=5
                 )
             except TimeoutError:
-                print(
-                    f"timeout with api: {settings.mws_api_path} "
-                )
-
+                print(f"timeout with api: {settings.mws_api_path} ")
 
     async def get_geodata(
         self, locataion: str, checkIn: str, checkOut: str | None = None
@@ -85,11 +78,21 @@ class WeathersEtl:
                 "currency": "rub",
                 "limit": 1,
             }
-            response = await session.request(
-                "GET", req_url, json=None, params=req_params
-            )
+            try:
+                response = await session.request(
+                    "GET", req_url, json=None, params=req_params, timeout=5
+                )
+            except TimeoutError:
+                response = None
+                print(
+                    f"timeout with api: engine.hotellook with operation cache.json"
+                )
 
-            body = await response.json()
+            try:
+                body = await response.json()
+            except json.decoder.JSONDecodeError as e:
+                body = None
+                print(f"error - {e}")
 
             if body:
                 location = body[0]["location"]
@@ -168,15 +171,19 @@ class WeathersEtl:
                     "GET", req_url, json=None, params=params
                 )
 
-                body = await response.json()
-
-                # pprint(body)
                 try:
-                    temp.extend(body["daily"]["temperature_2m_mean"])
-                    snowfall.extend(body["daily"]["snowfall_sum"])
-                    rain.extend(body["daily"]["rain_sum"])
-                except KeyError:
-                    print(f"not faind data for {location}")
+                    body = await response.json()
+                except json.decoder.JSONDecodeError as e:
+                    body = None
+                    print(f"error - {e}")
+
+                if body:
+                    try:
+                        temp.extend(body["daily"]["temperature_2m_mean"])
+                        snowfall.extend(body["daily"]["snowfall_sum"])
+                        rain.extend(body["daily"]["rain_sum"])
+                    except KeyError:
+                        print(f"not faind data for {location}")
 
             return {
                 "fields": {

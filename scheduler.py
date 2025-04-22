@@ -97,10 +97,16 @@ class PoolRunner:
                 )
                 if response:
 
-                    body = await response.json()
+                    try:
+                        body = await response.json()
+                    except json.decoder.JSONDecodeError as e:
+                        body = None
+                        print(f"error - {e}")
 
-                
-                    res = self.create_state(body["data"]["records"])
+                    if body:
+                        res = self.create_state(body["data"]["records"])
+                    else:
+                        res = []
 
                     for item in res:
                         if item not in self.state:

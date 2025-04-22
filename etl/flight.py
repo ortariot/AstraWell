@@ -1,5 +1,6 @@
 import asyncio
 from pprint import pprint
+import json
 
 import aiohttp
 
@@ -75,10 +76,6 @@ class FlightEtl:
                 "GET", req_url, json=None, params=None, headers=req_json
             )
 
-            body = await response.json()
-
-            pprint(body)
-
     async def monthly_flight(
         self,
         origin: str,
@@ -110,7 +107,13 @@ class FlightEtl:
                 response = None
 
             if response:
-                body = await response.json()
+
+                try:
+                    body = await response.json()
+                except json.decoder.JSONDecodeError as e:
+                    body = {}
+                    print(f"error - {e}")
+
             else:
                 body = {}
 
@@ -180,9 +183,11 @@ class FlightEtl:
                     "GET", req_url, json=None, params=req_params, timeout=5
                 )
                 body = await response.json()
-            except TimeoutError:
+            except (TimeoutError, json.decoder.JSONDecodeError) as e:
                 body = {}
-                print(f"timeout from api.travelpayouts with prices_for_dates operation for {origin} - {destination} flight")
+                print(
+                    f"error {e} for api.travelpayouts with prices_for_dates operation for {origin} - {destination} flight"
+                )
 
             if body.get("data"):
                 prepeare_data = self.preparate_data(
@@ -204,7 +209,12 @@ class FlightEtl:
                 response = await session.request(
                     "GET", req_url, json=None, params=req_params
                 )
-                body = await response.json()
+
+                try:
+                    body = await response.json()
+                except json.decoder.JSONDecodeError as e:
+                    body = {}
+                    print(f"error - {e}")
 
                 if body.get("data"):
                     prepeare_data = self.preparate_data(
