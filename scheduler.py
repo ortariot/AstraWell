@@ -85,14 +85,28 @@ class PoolRunner:
 
         json_data = {
             "fieldKey": "name",
-            "pageSize": 1000
+        }
+
+        params = {
+            "pageSize": 1000,
+            "fields": [
+                "origin",
+                "destination",
+                "departure_at",
+                "return_at",
+            ],
         }
         async with aiohttp.ClientSession() as session:
             while True:
 
                 try:
                     response = await session.request(
-                        "GET", req_url, json=json_data, headers=headers
+                        "GET",
+                        req_url,
+                        json=json_data,
+                        headers=headers,
+                        params=params,
+                        timeout=5,
                     )
                 except TimeoutError:
                     response = None
