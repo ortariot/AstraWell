@@ -31,7 +31,7 @@ class Sceduler:
                     time.sleep(10)
                     update_vars(self.token)
                     self.curr_pos = total
-                print(f"tick - {time.time}")
+                print(f"tick - {time.time()}")
                 time.sleep(10)
             except KeyboardInterrupt:
                 break
