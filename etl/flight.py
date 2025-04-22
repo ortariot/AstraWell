@@ -36,34 +36,35 @@ class FlightEtl:
 
     async def send_data(self, flights):
 
+        req_url = (
+            settings.mws_api_path
+            + f"/fusion/v1/datasheets/{settings.mws_table_flights}/records"
+        )
+
         async with aiohttp.ClientSession() as session:
-            req_url = "https://true.tabs.sale/fusion/v1/datasheets/dstcm0K692wmmJX2Pq/records?viewId=viwR9ZsN4vH3x&fieldKey=name"
+
             headers = {
                 "Authorization": self.mws_tables_token,
                 "Content-Type": "application/json",
             }
 
-            data = {
+            json = {
                 "records": flights,
                 "fieldKey": "name",
             }
 
-            response = await session.request(
-                "POST",
-                req_url,
-                json=data,
-                params=None,
-                headers=headers,
-                data=None,
-            )
-
-            body = await response.json()
-
-            # print("!!!!!!!")
-            # pprint(body)
-            # print("@@@@@@")
-            # pprint(flights)
-            # print("########")
+            try:
+                response = await session.request(
+                    "POST",
+                    req_url,
+                    json=json,
+                    params=None,
+                    headers=headers,
+                    data=None,
+                    timeout=5,
+                )
+            except TimeoutError:
+                print(f"timeout with api: {settings.mws_api_path}")
 
     async def test_get(self):
         async with aiohttp.ClientSession() as session:
@@ -97,10 +98,21 @@ class FlightEtl:
         }
 
         async with aiohttp.ClientSession() as session:
-            response = await session.request(
-                "GET", req_url, json=None, params=req_params
-            )
-            body = await response.json()
+
+            try:
+                response = await session.request(
+                    "GET", req_url, json=None, params=req_params, timeout=2
+                )
+            except TimeoutError:
+                print(
+                    f"timeout from api.travelpayouts with month-matrix operation for {origin} - {destination} flight"
+                )
+                response = None
+
+            if response:
+                body = await response.json()
+            else:
+                body = {}
 
             flight_data = body.get("data") if body.get("data") else []
 
@@ -162,10 +174,15 @@ class FlightEtl:
         }
 
         async with aiohttp.ClientSession() as session:
-            response = await session.request(
-                "GET", req_url, json=None, params=req_params
-            )
-            body = await response.json()
+
+            try:
+                response = await session.request(
+                    "GET", req_url, json=None, params=req_params, timeout=5
+                )
+                body = await response.json()
+            except TimeoutError:
+                body = {}
+                print(f"timeout from api.travelpayouts with prices_for_dates operation for {origin} - {destination} flight")
 
             if body.get("data"):
                 prepeare_data = self.preparate_data(

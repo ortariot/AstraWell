@@ -37,27 +37,36 @@ class WeathersEtl:
 
     async def load_weather(self, data: list) -> None:
 
-        req_url = "https://true.tabs.sale/fusion/v1/datasheets/dst7K9VFJa4MwzrTgi/records?viewId=viwefLthUSKrW&fieldKey=name"
+        req_url = (
+                settings.mws_api_path
+                + f"/fusion/v1/datasheets/{settings.mws_table_weather}/records"
+            )
 
         headers = {
             "Authorization": self.mws_tables_token,
             "Content-Type": "application/json",
         }
 
-        data = {
+        json = {
             "records": [data],
             "fieldKey": "name",
         }
 
         async with aiohttp.ClientSession() as session:
-            response = await session.request(
-                "POST",
-                req_url,
-                json=data,
-                params=None,
-                headers=headers,
-                data=None,
-            )
+
+            try:
+                response = await session.request(
+                    "POST",
+                    req_url,
+                    json=json,
+                    headers=headers,
+                    timeout=5
+                )
+            except TimeoutError:
+                print(
+                    f"timeout with api: {settings.mws_api_path} "
+                )
+
 
     async def get_geodata(
         self, locataion: str, checkIn: str, checkOut: str | None = None

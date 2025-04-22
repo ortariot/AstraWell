@@ -70,41 +70,58 @@ class PoolRunner:
 
     async def scheduler(self):
 
-        req_url = "https://true.tabs.sale/fusion/v1/datasheets/dstThkcrNzwYXtJYrA/records?viewId=viwn1y8BUUFTy&fieldKey=name"
+        req_url = (
+                settings.mws_api_path
+                + f"/fusion/v1/datasheets/{settings.mws_table_preferences}/records"
+            )
+        
         headers = {
             "Authorization": self.mws_tables_token,
             "Content-Type": "application/json",
         }
+
+        json = {
+                "fieldKey": "name"
+            }
         async with aiohttp.ClientSession() as session:
             while True:
-                response = await session.request(
-                    "GET", req_url, json=None, params=None, headers=headers
+
+                try:
+                    response = await session.request(
+                        "GET", req_url, json=json, headers=headers
+                    )
+                except TimeoutError:
+                    response = None
+                    print(
+                        f"timeout with api: {settings.mws_api_path}"
                 )
+                if response:
 
-                body = await response.json()
+                    body = await response.json()
 
-                res = self.create_state(body["data"]["records"])
+                
+                    res = self.create_state(body["data"]["records"])
 
-                for item in res:
-                    if item not in self.state:
-                        print("new idea found!!!")
+                    for item in res:
+                        if item not in self.state:
+                            print("new idea found!!!")
 
-                        params = item.split("_")
+                            params = item.split("_")
 
-                        # print(params)
-                        params[4] = None if params[4] == "None" else params[4]
+                            params[4] = None if params[4] == "None" else params[4]
 
-                        await self.flights.flight_etl(*params)
-                        await self.hotels.hotels_etl(
-                            params[1], params[2], params[3], params[4]
-                        )
-                        await self.weather.weather_etl(
-                            params[1], params[2], params[3], params[4]
-                        )
-                        self.state.add(item)
+                            await self.flights.flight_etl(*params)
+                            await self.hotels.hotels_etl(
+                                params[1], params[2], params[3], params[4]
+                            )
+                            await self.weather.weather_etl(
+                                params[1], params[2], params[3], params[4]
+                            )
+                            self.state.add(item)
+                            now = time.time()
 
-                time.sleep(10)
-
+                    time.sleep(10)
+                    print(f"wait new ideas last idea by {now}")
 
 if __name__ == "__main__":
     etl = PoolRunner()

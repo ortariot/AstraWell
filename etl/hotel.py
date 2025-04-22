@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 from pprint import pprint
+import json
 
 import aiohttp
 
@@ -30,10 +31,16 @@ class HotelEtl:
         else:
             days = 1
 
-        data = self.preparate(hotels, locataion, check_in, days, preference_id)
+        if hotels:
+            data = self.preparate(
+                hotels, locataion, check_in, days, preference_id
+            )
 
-        print(f"add hotels for location {locataion}")
-        await self.load_hotels(data)
+            await self.load_hotels(data)
+
+            print(f"add hotels for location {locataion}")
+        else:
+            print(f"hotels for location {locataion} not found")
 
     async def get_hotels(
         self, locataion: str, checkIn: str, checkOut: str | None = None
@@ -52,11 +59,19 @@ class HotelEtl:
                 "currency": "rub",
                 "limit": 10,
             }
-            response = await session.request(
-                "GET", req_url, json=None, params=req_params
-            )
+            try:
+                response = await session.request(
+                    "GET", req_url, json=None, params=req_params, timeout=5
+                )
+            except TimeoutError:
+                print(
+                    f"timeout with api: engine.hotellook.com"
+                )
 
-            body = await response.json()
+            try:
+                body = await response.json()
+            except json.decoder.JSONDecodeError:
+                body = []
 
             return body
 
@@ -72,6 +87,7 @@ class HotelEtl:
         # print(locataion)
         res = []
         for item in data:
+
             res.append(
                 {
                     "fields": {
@@ -83,7 +99,11 @@ class HotelEtl:
                         "stars": item["stars"],
                         "arrival": check_in,
                         "days": days,
-                        "price_per_day": int(item["priceAvg"]) / days,
+                        "price_per_day": (
+                            int(item["priceAvg"]) / days
+                            if days > 0
+                            else item["priceAvg"]
+                        ),
                         "preference": [preference_id],
                     }
                 }
@@ -92,26 +112,33 @@ class HotelEtl:
         return res
 
     async def load_hotels(self, hotels: list):
-        req_url = "https://true.tabs.sale/fusion/v1/datasheets/dstNBH9m70fMYr5mdX/records?viewId=viwbk0Np3NGEJ&fieldKey=name"
+
+        req_url = (
+            settings.mws_api_path
+            + f"/fusion/v1/datasheets/{settings.mws_table_hotels}/records"
+        )
 
         headers = {
             "Authorization": self.mws_tables_token,
             "Content-Type": "application/json",
         }
 
-        data = {
+        json = {
             "records": hotels,
             "fieldKey": "name",
         }
 
         async with aiohttp.ClientSession() as session:
-            response = await session.request(
-                "POST",
-                req_url,
-                json=data,
-                params=None,
-                headers=headers,
-                data=None,
-            )
 
-
+            try:
+                response = await session.request(
+                    "POST",
+                    req_url,
+                    json=json,
+                    headers=headers,
+                    timeout=5
+                )
+            except TimeoutError:
+                print(
+                    f"timeout with api: {settings.mws_api_path}"
+                )
