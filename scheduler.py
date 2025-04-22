@@ -128,7 +128,8 @@ class PoolRunner:
                                 params[1], params[2], params[3], params[4]
                             )
                             await self.cache.add_list("scheduler", item)
-                            now = time.time()
+                    
+                    now = time.time()
 
                     time.sleep(10)
                     print(f"wait new ideas last idea by {now}")
