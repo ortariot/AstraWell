@@ -3,6 +3,7 @@ import logging
 from asyncio import CancelledError
 from datetime import datetime
 from functools import partial
+from typing import Any
 
 from dateutil.parser import parse
 from aiogram import Bot, Dispatcher, types, F
@@ -35,6 +36,7 @@ class StateService(BaseModel):
     users: list[UserInfo] = []
     from_nick: dict[str, UserInfo] = Field(None, exclude=True)
     from_mts_user_id: dict[str, UserInfo] = Field(None, exclude=True)
+    http_session: Any = Field(None, exclude=True)
 
 
 
@@ -45,20 +47,19 @@ STATE = StateService()
 
 async def _get_table(url: str, fields: list[str] | None = None):
     params = {'fields': fields} if fields else {}
-    async with ClientSession() as ses:
-        async with ses.get(
-                url,
-                headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
-                params=params,
-                raise_for_status=True
-        ) as response:
-            return await response.json()
+    async with STATE.http_session.get(
+            url,
+            headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
+            params=params,
+            raise_for_status=True
+    ) as response:
+        return await response.json()
 
-get_users = partial(_get_table, 'https://true.tabs.sale/fusion/v1/datasheets/dstGLhT5cQ14QWYrvP/records')
-get_managers = partial(_get_table, 'https://true.tabs.sale/fusion/v1/datasheets/dstQrDCjZUP3CURDDD/records')
-get_directors = partial(_get_table, 'https://true.tabs.sale/fusion/v1/datasheets/dst83xQGFcF3Rq1epj/records')
-get_user_autocomplete = partial(_get_table, 'https://true.tabs.sale/fusion/v1/datasheets/dstfmuNcr1RQQypr9q/records')
-get_poling_messages = partial(_get_table, 'https://true.tabs.sale/fusion/v1/datasheets/dstkgFW7oLupkX4qAP/records')
+get_users = partial(_get_table, f'{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstGLhT5cQ14QWYrvP/records')
+get_managers = partial(_get_table, f'{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstQrDCjZUP3CURDDD/records')
+get_directors = partial(_get_table, f'{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dst83xQGFcF3Rq1epj/records')
+get_user_autocomplete = partial(_get_table, f'{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstfmuNcr1RQQypr9q/records')
+get_poling_messages = partial(_get_table, f'{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstkgFW7oLupkX4qAP/records')
 
 async def do_user_autocomplete():
     data = await get_user_autocomplete()
@@ -67,43 +68,42 @@ async def do_user_autocomplete():
     if data['total'] > 0:
         for record in data['records']:
             try:
-                async with ClientSession() as ses:
-                    fields = record['fields']
-                    if fields['user'] not in STATE.from_mts_user_id:
-                        logger.info('пора ради %s обновить %s', fields['user'], STATE.from_mts_user_id )
-                        await merge_users()
-                    if fields['user'] in STATE.from_mts_user_id:
-                        data = {
-                            'records': [
-                                {
-                                    'recordId': fields['target_id'],
-                                    'fields': {
-                                        f'{fields["target_field"]}': [
-                                            STATE.from_mts_user_id[fields['user']].mts_record_id
-                                        ]
-                                    }
+                fields = record['fields']
+                if fields['user'] not in STATE.from_mts_user_id:
+                    logger.info('пора ради %s обновить %s', fields['user'], STATE.from_mts_user_id )
+                    await merge_users()
+                if fields['user'] in STATE.from_mts_user_id:
+                    data = {
+                        'records': [
+                            {
+                                'recordId': fields['target_id'],
+                                'fields': {
+                                    f'{fields["target_field"]}': [
+                                        STATE.from_mts_user_id[fields['user']].mts_record_id
+                                    ]
                                 }
-                            ]
-                        }
-                        async with ses.patch(
-                            f"https://true.tabs.sale/fusion/v1/datasheets/{fields['target_shield']}/records",
-                            headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
-                            raise_for_status=True,
-                            json=data
-                        ) as response:
-                            result = await response.json()
-                            logger.debug('Проставил юзера %s, %s, %s', record, result, data)
-                    else:
-                        logger.warning('ПЛОХАЯ ЗАПИСЬ! %s', record)
-                    # ПРИБОРКА
-                    async with ses.delete(
-                        "https://true.tabs.sale/fusion/v1/datasheets/dstfmuNcr1RQQypr9q/records",
+                            }
+                        ]
+                    }
+                    async with STATE.http_session.patch(
+                        f"{CFG.MTS.BASE_URL}/fusion/v1/datasheets/{fields['target_shield']}/records",
                         headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
                         raise_for_status=True,
-                        params={'recordIds': record['recordId']}
+                        json=data
                     ) as response:
                         result = await response.json()
-                        logger.debug('Очистил атвокомпликт %s, %s', record, result)
+                        logger.debug('Проставил юзера %s, %s, %s', record, result, data)
+                else:
+                    logger.warning('ПЛОХАЯ ЗАПИСЬ! %s', record)
+                # ПРИБОРКА
+                async with STATE.http_session.delete(
+                    f"{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstfmuNcr1RQQypr9q/records",
+                    headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
+                    raise_for_status=True,
+                    params={'recordIds': record['recordId']}
+                ) as response:
+                    result = await response.json()
+                    logger.debug('Очистил атвокомпликт %s, %s', record, result)
 
             except Exception as exc:
                 logger.exception('Автокомпликт %s, %s', exc, record)
@@ -136,15 +136,14 @@ async def send_messages(messages: list[dict], bot: Bot):
                     parse_mode=type_message
                 )
                 await bot.send_message(STATE.from_nick[record['fields']['username']].chat_id, record['fields']['text'], **kwargs)
-            async with ClientSession() as ses:
-                async with ses.delete(
-                        "https://true.tabs.sale/fusion/v1/datasheets/dstkgFW7oLupkX4qAP/records",
-                        headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
-                        params={'recordIds': record['recordId']},
-                        raise_for_status=True
-                ) as response:
-                    data = await response.json()
-                    logger.debug('Очистка удалённого сообщения %s', data)
+            async with STATE.http_session.delete(
+                    f"{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstkgFW7oLupkX4qAP/records",
+                    headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
+                    params={'recordIds': record['recordId']},
+                    raise_for_status=True
+            ) as response:
+                data = await response.json()
+                logger.debug('Очистка удалённого сообщения %s', data)
         except Exception as exc:
             logger.exception('Отправка сообщения, %s %s', exc, record)
 
@@ -225,7 +224,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
         await message.answer("Привет, пользователь!\nПодумаем над новой идеей? Или вспомним  какие уже есть?", reply_markup=keyboard)
     else:
         options_2 = LinkPreviewOptions(
-            url="https://true.tabs.sale/share/shrj0nKc2ujcmCU8zTQz0/fomyhCAk2XGlPDZn6B",
+            url="{CFG.MTS.BASE_URL}/share/shrj0nKc2ujcmCU8zTQz0/fomyhCAk2XGlPDZn6B",
             prefer_small_media=True
         )
         await message.answer("Привет!.. Мы поможем тебе хорошо отдохнуть и не пролететь. Давай подключаться к проекту?", link_preview_options=options_2)
@@ -309,31 +308,30 @@ async def new_idea_end_date(message: Message, state: FSMContext):
         )
     else:
         keyboard = make_row_keyboard("новая идея", "посмотреть идеи")
-        result = 'Отлично, [записал](https://true.tabs.sale/workbench/mirwP09NHQExSZeMr6), скоро будут предложения.'
+        result = f'Отлично, [записал]({CFG.MTS.BASE_URL}/workbench/mirwP09NHQExSZeMr6), скоро будут предложения.'
         data = await state.get_data()
         await state.clear()
         try:
-            async with ClientSession() as ses:
-                async with ses.post(
-                    "https://true.tabs.sale/fusion/v1/datasheets/dstBuL8jPgynbJrEpD/records",
-                    headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
-                    raise_for_status=True,
-                    json={
-                        'records':[
-                            {
-                                "fields": {
-                                    "name": data["idea_name"],
-                                    "description": data["idea_description"],
-                                    "user": [STATE.from_nick[message.from_user.username].mts_record_id],
-                                    "start_date":data["idea_start_date"],
-                                    "return_date": timestamp
-                                }
+            async with STATE.http_session.post(
+                f"{CFG.MTS.BASE_URL}/fusion/v1/datasheets/dstBuL8jPgynbJrEpD/records",
+                headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
+                raise_for_status=True,
+                json={
+                    'records':[
+                        {
+                            "fields": {
+                                "name": data["idea_name"],
+                                "description": data["idea_description"],
+                                "user": [STATE.from_nick[message.from_user.username].mts_record_id],
+                                "start_date":data["idea_start_date"],
+                                "return_date": timestamp
                             }
-                        ]
-                    }
-                ) as response:
-                    data = await response.json()
-                    logger.debug('Добавление записи идеи %s', data)
+                        }
+                    ]
+                }
+            ) as response:
+                data = await response.json()
+                logger.debug('Добавление записи идеи %s', data)
         except Exception as exc:
             result = 'Ууупс, я извиняюсь, что-то пошло не так, попробуйте позже...'
             logger.exception('Ошибка регистрации идеи %s %s', message.from_user.username, exc)

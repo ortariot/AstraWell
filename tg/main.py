@@ -5,13 +5,13 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 
+from aiohttp import ClientSession
 from fastapi import FastAPI
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from src.bot import bot, dp, polling, STATE, StateService, autocompleting
 
-from src.config import CFG
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -27,6 +27,7 @@ async def lifespan(app):
         STATE.users = state.users
         STATE.from_nick = {_.nick:_ for _ in STATE.users if _.nick is not None}
         STATE.from_mts_user_id = {_.mts_user_id:_ for _ in STATE.users if _.mts_user_id is not None}
+    STATE.http_session = ClientSession()
 
     BG_TASKS.add(asyncio.create_task(dp.start_polling(bot,polling_timeout= 1)))
     BG_TASKS.add(asyncio.create_task(polling(bot)))
@@ -36,12 +37,16 @@ async def lifespan(app):
         json.dump(STATE.model_dump(), file)
     for t in BG_TASKS:
         t.cancel()
+    await STATE.http_session.close()
 
 
 app = FastAPI(lifespan=lifespan, openapi_tags=[
     {'name': 'click_main'}
 ])
 
+@app.get("/get_state")
+async def get_state() -> StateService:
+    return STATE.model_dump()
 
 
 
