@@ -35,6 +35,7 @@ class StateService(BaseModel):
     users: list[UserInfo] = []
     from_nick: dict[str, UserInfo] = Field(None, exclude=True)
     from_mts_user_id: dict[str, UserInfo] = Field(None, exclude=True)
+    http_session: ClientSession = Field(None, exclude=True)
 
 
 
@@ -45,7 +46,7 @@ STATE = StateService()
 
 async def _get_table(url: str, fields: list[str] | None = None):
     params = {'fields': fields} if fields else {}
-    async with ClientSession() as ses:
+    async with STATE.http_session as ses:
         async with ses.get(
                 url,
                 headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
@@ -67,7 +68,7 @@ async def do_user_autocomplete():
     if data['total'] > 0:
         for record in data['records']:
             try:
-                async with ClientSession() as ses:
+                async with STATE.http_session as ses:
                     fields = record['fields']
                     if fields['user'] not in STATE.from_mts_user_id:
                         logger.info('пора ради %s обновить %s', fields['user'], STATE.from_mts_user_id )
@@ -136,7 +137,7 @@ async def send_messages(messages: list[dict], bot: Bot):
                     parse_mode=type_message
                 )
                 await bot.send_message(STATE.from_nick[record['fields']['username']].chat_id, record['fields']['text'], **kwargs)
-            async with ClientSession() as ses:
+            async with STATE.http_session as ses:
                 async with ses.delete(
                         "https://true.tabs.sale/fusion/v1/datasheets/dstkgFW7oLupkX4qAP/records",
                         headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
@@ -313,7 +314,7 @@ async def new_idea_end_date(message: Message, state: FSMContext):
         data = await state.get_data()
         await state.clear()
         try:
-            async with ClientSession() as ses:
+            async with STATE.http_session as ses:
                 async with ses.post(
                     "https://true.tabs.sale/fusion/v1/datasheets/dstBuL8jPgynbJrEpD/records",
                     headers={'Authorization': f'Bearer {CFG.MTS.TOKEN}'},
