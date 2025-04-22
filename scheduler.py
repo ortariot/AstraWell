@@ -94,7 +94,7 @@ class PoolRunner:
                 "destination",
                 "departure_at",
                 "return_at",
-            ]
+            ],
         }
         async with aiohttp.ClientSession() as session:
             while True:
@@ -148,7 +148,7 @@ class PoolRunner:
 
                     now = time.time()
 
-                    time.sleep(10)
+                    await asyncio.sleep(10)
                     print(f"wait new ideas last idea by {now}")
 
 
