@@ -131,7 +131,7 @@ class Tables(BaseApi):
         """ """
 
         super().__init__(token)
-        self.base_host: str = "https://true.tabs.sale/fusion/v1/datasheets"
+        self.base_host: str = "https://tables.mws.ru/fusion/v1/datasheets"
 
     def get_full_table(
         self,

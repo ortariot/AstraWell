@@ -7,6 +7,7 @@ class BaseConfig(BaseSettings):
     )
 
     mws_tables_token: str = "test"
+    mts__token: str = "test"
 
 
 class Config:

@@ -1,4 +1,4 @@
-from config import Config as cf
+from core.settings import Config as cf
 from mwstables import Tables
 from utils import filter_list_by_idea, get_extremums
 
