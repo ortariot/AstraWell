@@ -110,7 +110,10 @@ class FlightEtl:
 
                 try:
                     body = await response.json()
-                except json.decoder.JSONDecodeError as e:
+                except (
+                    json.decoder.JSONDecodeError,
+                    aiohttp.client_exceptions.ContentTypeError,
+                ) as e:
                     body = {}
                     print(f"error - {e}")
 
@@ -151,6 +154,58 @@ class FlightEtl:
             for item in body
         ]
 
+    async def get_flight_round(
+        self,
+        origin: str,
+        destination: str,
+        departure_at: str,
+        preference_id: str,
+    ):
+        req_url = "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"
+
+        dep_List = departure_at.split("-")
+        departure_at = dep_List[0] + "-" + dep_List[1]
+
+        req_params = {
+            "origin": origin,
+            "destination": destination,
+            "departure_at": departure_at,
+            "unique": "false",
+            "sorting": "price",
+            "direct": "false",
+            "currency": "rub",
+            "limit": 20,
+            "token": self.aviasale_token,
+            "page": 1,
+            "one_way": "false",
+        }
+
+        async with aiohttp.ClientSession() as session:
+
+            try:
+                response = await session.request(
+                    "GET", req_url, params=req_params, timeout=5
+                )
+                body = await response.json()
+            except (
+                TimeoutError,
+                json.decoder.JSONDecodeError,
+                aiohttp.client_exceptions.ContentTypeError,
+            ) as e:
+                body = {}
+                print(
+                    f"error {e} for api.travelpayouts with prices_for_dates operation for {origin} - {destination} flight"
+                )
+
+            if body.get("data"):
+                prepeare_data = self.preparate_data(
+                    body.get("data"), preference_id
+                )
+                print("GET FLIGHT ROUND")
+                return prepeare_data
+            else:
+                return []
+
     async def get_flight(
         self,
         origin: str,
@@ -160,6 +215,7 @@ class FlightEtl:
         return_at: str | None = None,
     ) -> list:
         result = []
+
         req_url = "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"
 
         req_params = {
@@ -183,7 +239,11 @@ class FlightEtl:
                     "GET", req_url, params=req_params, timeout=5
                 )
                 body = await response.json()
-            except (TimeoutError, json.decoder.JSONDecodeError) as e:
+            except (
+                TimeoutError,
+                json.decoder.JSONDecodeError,
+                aiohttp.client_exceptions.ContentTypeError,
+            ) as e:
                 body = {}
                 print(
                     f"error {e} for api.travelpayouts with prices_for_dates operation for {origin} - {destination} flight"
@@ -195,7 +255,10 @@ class FlightEtl:
                 )
                 result.extend(prepeare_data)
             else:
-                montly_data = await self.monthly_flight(
+                # montly_data = await self.monthly_flight(
+                #     origin, destination, departure_at, preference_id
+                # )
+                montly_data = await self.get_flight_round(
                     origin, destination, departure_at, preference_id
                 )
                 result.extend(montly_data)
@@ -212,7 +275,10 @@ class FlightEtl:
 
                 try:
                     body = await response.json()
-                except json.decoder.JSONDecodeError as e:
+                except (
+                    json.decoder.JSONDecodeError,
+                    aiohttp.client_exceptions.ContentTypeError,
+                ) as e:
                     body = {}
                     print(f"error - {e}")
 
@@ -222,8 +288,11 @@ class FlightEtl:
                     )
                     result.extend(prepeare_data)
                 else:
-                    montly_data = await self.monthly_flight(
-                        destination, origin, departure_at, preference_id
+                    # montly_data = await self.monthly_flight(
+                    #     origin, destination, departure_at, preference_id
+                    # )
+                    montly_data = await self.get_flight_round(
+                        origin, destination, departure_at, preference_id
                     )
                     result.extend(montly_data)
 

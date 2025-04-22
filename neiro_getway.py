@@ -5,13 +5,16 @@ import json
 import aiohttp
 
 from ainetwork.deepseek import DeepSeek
+from db.cache import RedisRepository
 from core.settings import settings
+
 
 
 class Idea:
     mws_tables_token = settings.mws_tables_token
     state = set()
     deepdeek = DeepSeek()
+    cache = RedisRepository()
 
     async def smart_idea(self):
         while True:
@@ -36,7 +39,7 @@ class Idea:
 
                 idea = "_".join([name, recordId])
 
-                if idea in self.state:
+                if idea in await self.cache.get_list("neiro_getway"):
                     continue
 
                 print(f"finded new idea {name}")
@@ -69,7 +72,7 @@ class Idea:
                     if preference:
                         preferences.append(preference)
 
-                    self.state.add(idea)
+                    await self.cache.add_list("neiro_getway", idea)
 
                 await self.update_idea(item, preferences)
 
@@ -226,6 +229,8 @@ class Idea:
                 body = None
                 print(f"error - {e}")
 
+            # pprint(body)
+
             try:
                 user_city = body["data"]["records"][0]["fields"]["city"][0]
             except (KeyError, IndexError, TypeError):
@@ -237,7 +242,7 @@ class Idea:
 
         req_url = (
             settings.mws_api_path
-            + f"/fusion/v1/datasheets/{settings.mws_table_airports}/records"
+            + f"/fusion/v1/datasheets/{settings.mws_table_airports}/records?viewId={city_id}"
         )
         req_json = {"Authorization": self.mws_tables_token}
 

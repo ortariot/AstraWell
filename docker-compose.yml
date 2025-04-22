@@ -35,6 +35,20 @@ services:
     depends_on:
       - neiro-getway
       - etl
+  cache:
+    image: redis:6.2-alpine
+    command: /bin/sh -c "redis-server --requirepass $$REDIS_PASSWORD"
+    volumes:
+      - cache:/data
+    env_file: .env
+    expose:
+      - "6379"
+    ports:
+      - 6379:6379
+
+volumes:
+  cache:
+    driver: local
 
 networks:
   default:

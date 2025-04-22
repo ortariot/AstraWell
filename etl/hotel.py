@@ -64,13 +64,15 @@ class HotelEtl:
                     "GET", req_url, params=req_params, timeout=5
                 )
             except TimeoutError:
-                print(
-                    f"timeout with api: engine.hotellook.com"
-                )
+                print(f"timeout with api: engine.hotellook.com")
 
             try:
                 body = await response.json()
-            except json.decoder.JSONDecodeError:
+            except (
+                json.decoder.JSONDecodeError,
+                aiohttp.client_exceptions.ContentTypeError,
+            ) as e:
+                print(f"error {e} in func get_hotels")
                 body = []
 
             return body
@@ -132,13 +134,7 @@ class HotelEtl:
 
             try:
                 response = await session.request(
-                    "POST",
-                    req_url,
-                    json=json,
-                    headers=headers,
-                    timeout=5
+                    "POST", req_url, json=json, headers=headers, timeout=5
                 )
             except TimeoutError:
-                print(
-                    f"timeout with api: {settings.mws_api_path}"
-                )
+                print(f"timeout with api: {settings.mws_api_path}")

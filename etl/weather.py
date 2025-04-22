@@ -90,7 +90,10 @@ class WeathersEtl:
 
             try:
                 body = await response.json()
-            except json.decoder.JSONDecodeError as e:
+            except (
+                json.decoder.JSONDecodeError,
+                aiohttp.client_exceptions.ContentTypeError,
+            ) as e:
                 body = None
                 print(f"error - {e}")
 
@@ -167,13 +170,14 @@ class WeathersEtl:
                     ],
                 }
 
-                response = await session.request(
-                    "GET", req_url, params=params
-                )
+                response = await session.request("GET", req_url, params=params)
 
                 try:
                     body = await response.json()
-                except json.decoder.JSONDecodeError as e:
+                except (
+                    json.decoder.JSONDecodeError,
+                    aiohttp.client_exceptions.ContentTypeError,
+                ) as e:
                     body = None
                     print(f"error - {e}")
 

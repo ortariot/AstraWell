@@ -19,6 +19,10 @@ class BaseConfig(BaseSettings):
     aviasales_token: str = "test"
     deepsek_key: str = "test"
 
+    redis_host: str = '127.0.0.1'
+    redis_port: int = 6379
+    redis_password: str = 'REDIS_PASSWORD'
+
 
 settings = BaseConfig()
 

@@ -13,4 +13,4 @@ ENV PYTHONUNBUFFERED 1
 
 RUN pip install --no-cache-dir --upgrade -r /neiro_getway/requirements.txt
 
-CMD ["python", "neiro_getwat.py"]
+CMD ["python", "neiro_getway.py"]
