@@ -1,3 +1,5 @@
+import math
+
 from core.settings import Config as cf
 from mwstables import Tables
 from utils import filter_list_by_idea, get_extremums
@@ -108,24 +110,52 @@ def update_vars(TOKEN: str) -> None:
             ),
         )
     )
+    
 
     # Получаем записи по гостиницам
-    hotel_recs = tb.get_records(
-        cf.HOTEL_TABLE_ID, add_params={"pageSize": 1000}
-    )
+    
+    hotel_info = tb.get_table_info(cf.HOTEL_TABLE_ID)
+    
+    total_h = hotel_info.get("total", 1000)
+
+    page_count_h = math.floor(total_h / 1000)
+
+    hotel_recs = []
+    
+    for page_num in range(1, page_count_h + 2):
+        hotel_recs_page = tb.get_records(
+            cf.HOTEL_TABLE_ID, add_params={"pageSize": 1000, "pageNum": page_num}
+        )
+        
+        hotel_recs += hotel_recs_page
 
     # Получаем записи по рейсам
+    
+    flight_info = tb.get_table_info(cf.HOTEL_TABLE_ID)
+    
+    total_f = flight_info.get("total", 1000)
 
-    flight_recs = tb.get_records(
-        cf.FLIGHTS_TABLE_ID, add_params={"pageSize": 1000}
-    )
+    page_count_f = math.floor(total_f / 1000)
 
+    flight_recs = []
+
+    for page_num in range(1, page_count_f + 2):
+    
+        flight_rec_page = tb.get_records(
+            cf.FLIGHTS_TABLE_ID, add_params={"pageSize": 1000, "pageNum": page_num}
+        )
+
+        flight_recs += flight_rec_page
+        
     # Рассчитываем варианты
 
     tb.erase_table(cf.VARIANT_TABLE_ID)
 
     for idea in idea_list:
+        print(idea)
         for idea_name, idea_id in idea.items():
+            if not idea_name:
+                continue
             top_3_f = get_top_3_flights_by_idea(
                 flight_recs, idea_name, idea_id
             )
@@ -142,55 +172,3 @@ def update_vars(TOKEN: str) -> None:
             tb.add_records(cf.VARIANT_TABLE_ID, top_3_res)
 
 
-if __name__ == "__main__":
-
-    from pprint import pprint
-
-    TOKEN = "uskcpZ2JD2FZUXTVQ3Hd8WA"
-
-    update_vars(TOKEN)
-
-    # Получаем список идей из таблицы
-
-    # idea_recs = tb.get_records(cf.IDEAS_TABLE_ID, add_params={'pageSize': 1000})
-    # idea_list = list(filter(lambda x: x, map(lambda x: {x.get('fields').get('name'): x.get('recordId')}, idea_recs)))
-
-    # # Получаем записи по гостиницам
-    # hotel_recs = tb.get_records(cf.HOTEL_TABLE_ID, add_params={'pageSize': 1000})
-
-    # # Получаем записи по рейсам
-
-    # flight_recs = tb.get_records(cf.FLIGHTS_TABLE_ID, add_params={'pageSize': 1000})
-
-    # Рассчитываем рейтинги
-
-    # for idea in idea_list:
-    #     for idea_name, idea_id in idea.items():
-    #         top_3_f = get_top_3_flights_by_idea(flight_recs, idea_name, idea_id)
-    #         top_3_res = get_top_3_hotels_by_idea(hotel_recs, idea_name, idea_id)
-
-    #         if not top_3_res:
-    #             continue
-
-    #         for res in top_3_res:
-    #             res['fields']['flight'] = [top_3_f[0]]
-
-    #         tb.add_records(cf.VARIANT_TABLE_ID, top_3_res)
-
-    # tb.del_records(RATE_TABLE_ID, ['recTi0czqDK9v', 'rec4AbUGYPQpa'])
-
-    # raw_recs = tb.erase_table(RATE_TABLE_ID)
-
-    # s = set()
-
-    # for rec in recs:
-    #     # print(rec['fields'].get('Идея'))
-    #     s.update(rec['fields'].get('Идея'))
-
-    # print(s)
-
-    # ideas - 16
-
-    # {'Рок и пиво', 'Тепла охота', 'На картошку', 'В америку', 'Отпуск'}
-
-    # raw_recs = tb.erase_table(cf.VARIANT_TABLE_ID)
