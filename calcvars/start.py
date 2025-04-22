@@ -28,9 +28,10 @@ class Sceduler:
 
                 if total > self.curr_pos:
                     print("Table is update")
+                    time.sleep(10)
                     update_vars(self.token)
                     self.curr_pos = total
-                print("tick")
+                print(f"tick - {time.time}")
                 time.sleep(10)
             except KeyboardInterrupt:
                 break
@@ -40,6 +41,6 @@ class Sceduler:
 
 if __name__ == "__main__":
 
-    sc = Sceduler(settings.mws_tables_token)
+    sc = Sceduler(settings.mts__token)
 
     sc.run()
