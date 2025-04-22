@@ -10,7 +10,7 @@ class Bot(BaseModel):
 
 class MTS_(BaseModel):
     TOKEN: str
-    BASE_URL = 'https://tables.mws.ru'
+    BASE_URL:str = 'https://tables.mws.ru'
 
 class Config(BaseSettings):
     BOT: Bot = None
