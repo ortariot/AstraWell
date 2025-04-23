@@ -1,6 +1,4 @@
-from requests.exceptions import JSONDecodeError
-import time
-
+from requests.exceptions import JSONDecodeError, ConnectionError
 
 from etl import Extractor
 from core.settings import settings
@@ -30,16 +28,15 @@ class Sceduler:
                     ideas_dict = self.ex.get_ideas_dict(list(delta))
                     for idea_name in ideas_dict:
                         print(f"New idea object: {idea_name}")
-                    time.sleep(10)
                     self.ex.update_vars(ideas_dict)
-                print(f"tick - {time.time()}")
-                time.sleep(5)
+                else:
+                    print("No new ideas have been discovered")
                 
             except KeyboardInterrupt:
                 break
             except IndexError as e:
                 print(e)
-            except JSONDecodeError as e:
+            except (JSONDecodeError, ConnectionError) as e:
                 print(f"API error {e}")
             
 
