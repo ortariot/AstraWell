@@ -109,7 +109,7 @@ class PoolRunner:
                         headers=headers,
                         timeout=5,
                     )
-                except (TimeoutError, httpx.NetworkError, httpx.ConnectError):
+                except (TimeoutError, httpx.NetworkError, httpx.ConnectError, httpx.ConnectTimeout):
                     response = None
                     print(f"timeout with api: {settings.mws_api_path}")
                 if response:
