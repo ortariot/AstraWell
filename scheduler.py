@@ -128,8 +128,14 @@ class PoolRunner:
                     else:
                         res = []
 
+                    print(f"total ideas {body["data"]["pageSize"]}")
+
+                    state = await self.cache.get_list("scheduler")
+
+                    print(f"iseas in state: {len(state)}")
+
                     for item in res:
-                        if item not in await self.cache.get_list("scheduler"):
+                        if item not in state:
                             print("new idea found!!!")
 
                             params = item.split("_")

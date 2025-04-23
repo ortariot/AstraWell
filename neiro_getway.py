@@ -3,11 +3,11 @@ from pprint import pprint
 import json
 
 import aiohttp
+import httpx
 
 from ainetwork.deepseek import DeepSeek
 from db.cache import RedisRepository
 from core.settings import settings
-
 
 
 class Idea:
@@ -166,22 +166,25 @@ class Idea:
 
         req_json = {"Authorization": self.mws_tables_token}
 
-        async with aiohttp.ClientSession() as session:
+        async with httpx.AsyncClient() as client:
 
             try:
-                response = await session.request(
+                response = await client.request(
                     "GET",
                     req_url,
                     headers=req_json,
                     timeout=5,
                 )
-            except TimeoutError:
+            except (
+                TimeoutError,
+                aiohttp.client_exceptions.ClientConnectorError,
+            ):
                 response = None
                 print(f"timeout with api: {settings.mws_api_path}")
 
             if response:
                 try:
-                    body = await response.json()
+                    body = response.json()
                     return body["data"]["records"]
                 except (
                     aiohttp.client_exceptions.ContentTypeError,
@@ -228,8 +231,6 @@ class Idea:
             ) as e:
                 body = None
                 print(f"error - {e}")
-
-            # pprint(body)
 
             try:
                 user_city = body["data"]["records"][0]["fields"]["city"][0]
