@@ -73,31 +73,32 @@ class PoolRunner:
 
     async def scheduler(self):
 
-        req_url = (
-            settings.mws_api_path
-            + f"/fusion/v1/datasheets/{settings.mws_table_preferences}/records"
-        )
-
-        headers = {
-            "Authorization": self.mws_tables_token,
-            "Content-Type": "application/json",
-        }
-
-        json_data = {
-            "fieldKey": "name",
-        }
-
-        params = {
-            "pageSize": 1000,
-            "fields": [
-                "origin",
-                "destination",
-                "departure_at",
-                "return_at",
-            ],
-        }
         async with httpx.AsyncClient() as client:
             while True:
+
+                req_url = (
+                    settings.mws_api_path
+                    + f"/fusion/v1/datasheets/{settings.mws_table_preferences}/records"
+                )
+
+                headers = {
+                    "Authorization": self.mws_tables_token,
+                    "Content-Type": "application/json",
+                }
+
+                json_data = {
+                    "fieldKey": "name",
+                }
+
+                params = {
+                    "pageSize": 1000,
+                    "fields": [
+                        "origin",
+                        "destination",
+                        "departure_at",
+                        "return_at",
+                    ],
+                }
 
                 try:
                     response = await client.request(
