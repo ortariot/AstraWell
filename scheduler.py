@@ -1,10 +1,10 @@
 import asyncio
-import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pprint import pprint
 import json
 
 import aiohttp
+import httpx
 
 from etl.flight import FlightEtl
 from etl.hotel import HotelEtl
@@ -96,11 +96,11 @@ class PoolRunner:
                 "return_at",
             ],
         }
-        async with aiohttp.ClientSession() as session:
+        async with httpx.AsyncClient() as client:
             while True:
 
                 try:
-                    response = await session.request(
+                    response = await client.request(
                         "GET",
                         req_url,
                         json=json_data,
@@ -114,10 +114,11 @@ class PoolRunner:
                 if response:
 
                     try:
-                        body = await response.json()
+                        body = response.json()
                     except (
                         json.decoder.JSONDecodeError,
                         aiohttp.client_exceptions.ContentTypeError,
+                        httpx.NetworkError,
                     ) as e:
                         body = None
                         print(f"error - {e}")
@@ -146,10 +147,10 @@ class PoolRunner:
                             )
                             await self.cache.add_list("scheduler", item)
 
-                    now = time.time()
+                    now = datetime.now(timezone.utc)
 
-                    await asyncio.sleep(10)
                     print(f"wait new ideas last idea by {now}")
+                    await asyncio.sleep(10)
 
 
 if __name__ == "__main__":
