@@ -125,10 +125,9 @@ class PoolRunner:
 
                     if body:
                         res = self.create_state(body["data"]["records"])
+                        print(f"total ideas {body["data"]["pageSize"]}")
                     else:
                         res = []
-
-                    print(f"total ideas {body["data"]["pageSize"]}")
 
                     state = await self.cache.get_list("scheduler")
 
