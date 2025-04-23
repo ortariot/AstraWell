@@ -26,6 +26,7 @@
 - [pydantic](https://pypi.org/project/pydantic/)
 - [fastapi](https://fastapi.tiangolo.com/ru/)
 - [aiogram](https://pypi.org/project/aiogram/)
+- [redis](https://pypi.org/project/redis/)
 
 to start
 ```
