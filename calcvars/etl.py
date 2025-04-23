@@ -133,8 +133,8 @@ class Extractor:
     
     # Получаем записи по рейсам
     
-        flight_info = self.tb.get_table_info(cf.HOTEL_TABLE_ID)
-        flight_recs = self. fetch_all_recs(flight_info, self.tb.get_records, cf.FLIGHTS_TABLE_ID)
+        flight_info = self.tb.get_table_info(cf.FLIGHTS_TABLE_ID)
+        flight_recs = self.fetch_all_recs(flight_info, self.tb.get_records, cf.FLIGHTS_TABLE_ID)
 
     # Рассчитываем варианты
 
@@ -150,13 +150,16 @@ class Extractor:
             )
 
             if not top_3_res:
+                print(f"There are no suitable hotels for the idea {idea_name}")
                 continue
-
+            
+            if not top_3_f:
+                print(f"There are no suitable flights for the idea {idea_name}")
+                continue
+            
             for res in top_3_res:
-                flight_count = len(top_3_f)
-                if flight_count > 0:
-                    res["fields"]["flight"] = [top_3_f[0]]
-
+                res["fields"]["flight"] = [top_3_f[0]]
+                
             self.tb.add_records(cf.VARIANT_TABLE_ID, top_3_res)
                 
                 
@@ -191,5 +194,4 @@ class Extractor:
         """"""
         variant_recs = self.tb.get_records(cf.VARIANT_TABLE_ID, add_params={"pageSize": 1000})
         return set(map(lambda x: x.get("fields", {}).get("idea", [])[0], variant_recs))
-
     
