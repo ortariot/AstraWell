@@ -178,9 +178,10 @@ class Idea:
             except (
                 TimeoutError,
                 aiohttp.client_exceptions.ClientConnectorError,
-            ):
+                httpx.ConnectError
+            ) as e:
                 response = None
-                print(f"timeout with api: {settings.mws_api_path}")
+                print(f"{e} with api: {settings.mws_api_path}")
 
             if response:
                 try:

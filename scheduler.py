@@ -109,7 +109,7 @@ class PoolRunner:
                         headers=headers,
                         timeout=5,
                     )
-                except TimeoutError:
+                except (TimeoutError, httpx.NetworkError, httpx.ConnectError):
                     response = None
                     print(f"timeout with api: {settings.mws_api_path}")
                 if response:
@@ -119,7 +119,6 @@ class PoolRunner:
                     except (
                         json.decoder.JSONDecodeError,
                         aiohttp.client_exceptions.ContentTypeError,
-                        httpx.NetworkError,
                     ) as e:
                         body = None
                         print(f"error - {e}")
